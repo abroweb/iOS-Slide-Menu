@@ -41,7 +41,9 @@ typedef enum {
 @property (nonatomic, assign) BOOL menuNeedsLayout;
 @end
 
-@implementation SlideNavigationController
+@implementation SlideNavigationController{
+    BOOL        ignorePan;
+}
 
 NSString * const SlideNavigationControllerDidOpen = @"SlideNavigationControllerDidOpen";
 NSString * const SlideNavigationControllerDidClose = @"SlideNavigationControllerDidClose";
@@ -723,7 +725,8 @@ static SlideNavigationController *singletonInstance;
 	CGPoint translation = [aPanRecognizer translationInView:aPanRecognizer.view];
     CGPoint velocity = [aPanRecognizer velocityInView:aPanRecognizer.view];
 	NSInteger movement = translation.x - self.draggingPoint.x;
-	
+    CGPoint l=[aPanRecognizer locationInView:aPanRecognizer.view];
+    //NSLog(@"State: %ld  Tr:%f, %f   L %f, %f ",aPanRecognizer.state,translation.x,translation.y,l.x,l.y);
     Menu currentMenu;
     
     if (self.horizontalLocation > 0)
@@ -741,9 +744,11 @@ static SlideNavigationController *singletonInstance;
     if (aPanRecognizer.state == UIGestureRecognizerStateBegan)
 	{
 		self.draggingPoint = translation;
+        ignorePan=l.x>aPanRecognizer.view.frame.size.width/3.0;
     }
 	else if (aPanRecognizer.state == UIGestureRecognizerStateChanged)
 	{
+        if(ignorePan)return;
 		static CGFloat lastHorizontalLocation = 0;
 		CGFloat newHorizontalLocation = [self horizontalLocation];
 		lastHorizontalLocation = newHorizontalLocation;
@@ -756,6 +761,7 @@ static SlideNavigationController *singletonInstance;
 	}
 	else if (aPanRecognizer.state == UIGestureRecognizerStateEnded)
 	{
+        if(ignorePan)return;
         NSInteger currentX = [self horizontalLocation];
 		NSInteger currentXOffset = (currentX > 0) ? currentX : currentX * -1;
 		NSInteger positiveVelocity = (velocity.x > 0) ? velocity.x : velocity.x * -1;
